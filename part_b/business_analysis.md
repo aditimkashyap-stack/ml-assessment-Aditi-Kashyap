@@ -42,4 +42,98 @@ Hierarchical/multi-level modelling (global model with store-level random effects
 
 Or cluster stores by similarity (footfall, demographics) and train separate models per cluster.
 
+B2. Data and EDA Strategy
+
+(a) Data Integration
+
+Join strategy:
+
+Transactions → aggregated by store-month.
+
+Join with store attributes (store_id key).
+
+Join with promotion details (promotion_id, store_id, month).
+
+Join with calendar (month, festival/weekend flags).
+
+Grain of final dataset: One row = store-month-promotion combination.
+
+Aggregations:
+
+Total items sold, total revenue, average basket size.
+
+Promotion participation rate (% transactions under promotion).
+
+Footfall aggregated monthly.
+
+(b) EDA Analyses
+
+Promotion effectiveness plots: Bar charts of average items sold by promotion type. → Guides feature importance and baseline comparisons.
+
+Store segmentation: Boxplots of sales volume by location type (urban/semi-urban/rural). → Suggests clustering or stratification.
+
+Seasonality trends: Line charts of monthly sales volume across years. → Motivates inclusion of calendar features.
+
+Correlation heatmap: Between store attributes (size, footfall, competition) and sales volume. → Identifies multicollinearity, informs feature selection.
+
+(c) Imbalance in Promotions 
+
+Effect: The model may learn “no promotion” as the default and underfit promotion effects.
+
+Steps:
+
+Resampling (oversample promotion cases, undersample no-promotion).
+
+Weighting loss function to emphasise promotion rows.
+
+Ensure balanced evaluation metrics (precision/recall per promotion class).
+
+B3. Model Evaluation and Deployment 
+
+(a) Train-Test Split & Metrics 
+
+Split strategy:
+
+Time-based split: train on the first 2 years, validate/test on the last year.
+
+Random split inappropriate because it leaks future information into training.
+
+Metrics:
+
+RMSE/MAE (for regression) → measures prediction error in items sold.
+
+Uplift in items sold vs baseline promotion policy → business impact.
+
+Precision/recall per promotion (if classification) → ensures minority promotions are evaluated fairly.
+
+(b) Feature Importance Communication — 4 marks
+
+Investigation:
+
+Use SHAP values or permutation importance to see which features drove December vs March predictions.
+
+Example: December → festival flag + loyalty program engagement high → Loyalty Points Bonus recommended.
+
+March → high competition + low footfall → Flat Discount recommended.
+
+Communication: Present simple visuals (bar charts of top features per month) and explain in business terms: “The model chose Loyalty Points Bonus in December because customer loyalty and festival shopping were strong drivers.”
+
+(c) Deployment Process 
+
+Steps:
+
+Save model: Serialize with joblib/pickle (Python) or MLflow for versioning.
+
+Data pipeline: Each month, aggregate new transaction + store + promotion + calendar data into the same schema.
+
+Prediction service: Feed monthly store-level features into the model, generate promotion recommendations.
+
+Monitoring:
+
+Track prediction accuracy vs actual items sold.
+
+Monitor drift in input features (e.g., footfall distribution changes).
+
+Retrain when performance drops below the threshold or new promotion types are introduced.
+
 Justification: Captures local variation while leveraging shared patterns across stores.
